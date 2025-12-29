@@ -184,6 +184,37 @@ Format your response as a clear, actionable code review in Markdown.
         raise Exception(f"Claude API error: {str(e)}")
 
 
+@app.route('/test-comment')
+def test_comment():
+    """Test if we can post a comment"""
+    try:
+        # Replace these with your actual values
+        owner = "shreyan4"  # e.g., "johnsmith"
+        repo = "codereviewtest"  # e.g., "test-repo"
+        pr_number = 5  # Your latest test PR number
+        installation_id = 101785818  # Replace with your installation ID from Step 3
+        
+        token = get_installation_token(installation_id)
+        
+        url = f'https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments'
+        headers = {
+            'Authorization': f'token {token}',
+            'Accept': 'application/vnd.github.v3+json'
+        }
+        data = {'body': '🧪 Test comment from GitHub App'}
+        
+        response = requests.post(url, json=data, headers=headers)
+        return jsonify({
+            'status': response.status_code,
+            'response': response.json() if response.ok else response.text
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
 def post_review_to_github(owner, repo, pr_number, review_text, token):
     """Post the review as a comment on the PR"""
     
