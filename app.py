@@ -47,12 +47,18 @@ def get_installation_token(installation_id):
     return response.json()['token']
 
 
-@app.route('/webhook/pr', methods=['POST'])
+@app.route('/webhook/pr', methods=['GET', 'POST'])
 def handle_pr():
     """Main webhook endpoint for GitHub pull requests"""
     
+    # Handle GET requests for testing
+    if request.method == 'GET':
+        return jsonify({'message': 'Webhook endpoint is working. Send POST requests here.'}), 200
+    
+    # Original POST handling
     try:
         event = request.json
+        # ... rest of your code
         
         if not event:
             return jsonify({'error': 'No JSON payload received'}), 400
