@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 # Configuration
 GITHUB_APP_ID = os.getenv('GITHUB_APP_ID')
-GITHUB_PRIVATE_KEY = os.getenv('GITHUB_PRIVATE_KEY')  # The .pem file content
+GITHUB_PRIVATE_KEY = os.getenv('GITHUB_PRIVATE_KEY').replace('\\n', '\n')
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 
 MAX_DIFF_SIZE = 50000
@@ -45,6 +45,18 @@ def get_installation_token(installation_id):
     response.raise_for_status()
     
     return response.json()['token']
+
+
+@app.route('/debug')
+def debug():
+    return jsonify({
+        'has_anthropic_key': bool(ANTHROPIC_API_KEY),
+        'has_github_app_id': bool(GITHUB_APP_ID),
+        'has_private_key': bool(GITHUB_PRIVATE_KEY),
+        'private_key_starts_correctly': GITHUB_PRIVATE_KEY.startswith('-----BEGIN') if GITHUB_PRIVATE_KEY else False,
+        'private_key_has_newlines': '\n' in GITHUB_PRIVATE_KEY if GITHUB_PRIVATE_KEY else False,
+    })
+
 
 
 @app.route('/webhook/pr', methods=['GET', 'POST'])
