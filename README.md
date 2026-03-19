@@ -38,7 +38,7 @@ This system solves the problem of inconsistent and time-consuming code reviews b
 - **Backend**: Python, Flask
 - **AI**: Anthropic Claude Sonnet 4.5
 - **Integration**: GitHub Apps API
-- **Deployment**: Render with CD pipeline
+- **Deployment**: Railway with CD pipeline
 
 ## Contact
 
