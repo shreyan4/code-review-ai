@@ -47,15 +47,26 @@ def get_installation_token(installation_id):
     return response.json()['token']
 
 
-@app.route('/debug')
-def debug():
-    return jsonify({
-        'has_anthropic_key': bool(ANTHROPIC_API_KEY),
-        'has_github_app_id': bool(GITHUB_APP_ID),
-        'has_private_key': bool(GITHUB_PRIVATE_KEY),
-        'private_key_starts_correctly': GITHUB_PRIVATE_KEY.startswith('-----BEGIN') if GITHUB_PRIVATE_KEY else False,
-        'private_key_has_newlines': '\n' in GITHUB_PRIVATE_KEY if GITHUB_PRIVATE_KEY else False,
-    })
+@app.route('/test-auth')
+def test_auth():
+    try:
+        token = generate_jwt()
+        url = 'https://api.github.com/app'
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Accept': 'application/vnd.github.v3+json'
+        }
+        response = requests.get(url, headers=headers)
+        return jsonify({
+            'status': response.status_code,
+            'response': response.json()
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
 
 
 
