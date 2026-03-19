@@ -4,3 +4,4 @@ PyJWT
 python-dotenv
 anthropic
 cryptography
+gunicorn
