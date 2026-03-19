@@ -3,6 +3,7 @@ import requests
 import os
 import jwt
 import time
+import threading
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
@@ -72,61 +73,50 @@ def test_auth():
 
 @app.route('/webhook/pr', methods=['GET', 'POST'])
 def handle_pr():
-    """Main webhook endpoint for GitHub pull requests"""
-    
-    # Handle GET requests for testing
     if request.method == 'GET':
         return jsonify({'message': 'Webhook endpoint is working. Send POST requests here.'}), 200
-    
-    # Original POST handling
+
+    event = request.json
+    if not event:
+        return jsonify({'error': 'No JSON payload received'}), 400
+
+    # Start processing in background thread
+    thread = threading.Thread(target=process_pr, args=(event,))
+    thread.start()
+
+    # Return immediately to GitHub
+    return jsonify({'message': 'Review queued'}), 200
+
+
+def process_pr(event):
+    """Process PR review in background"""
     try:
-        event = request.json
-        # ... rest of your code
-        
-        if not event:
-            return jsonify({'error': 'No JSON payload received'}), 400
-        
         action = event.get('action')
-        
-        # Only process when PR is opened or updated
         if action not in ['opened', 'synchronize']:
-            print(f"Ignoring action: {action}")
-            return jsonify({'message': f'Ignored action: {action}'}), 200
-        
+            return
+
         pr = event.get('pull_request')
         repo = event.get('repository')
         installation = event.get('installation')
-        
+
         if not pr or not repo or not installation:
-            return jsonify({'error': 'Missing required data'}), 400
-        
-        # Get installation token for this specific installation
+            return
+
         installation_token = get_installation_token(installation['id'])
-        
         pr_number = pr['number']
-        repo_full_name = repo['full_name']
         owner = repo['owner']['login']
         repo_name = repo['name']
-        
-        print(f"Processing PR #{pr_number} in {repo_full_name}")
-        
-        # Get the code diff
+
+        print(f"Processing PR #{pr_number} in {repo['full_name']}")
+
         diff = get_pr_diff(owner, repo_name, pr_number, installation_token)
-        
-        # Review with Claude
         review = analyze_code_with_claude(diff)
-        
-        # Post review back to GitHub
         post_review_to_github(owner, repo_name, pr_number, review, installation_token)
-        
-        return jsonify({'message': 'Review posted successfully'}), 200
-        
+
     except Exception as e:
         import traceback
-        error_msg = f"Error processing PR: {str(e)}"
-        print(error_msg)
+        print(f"Error processing PR: {str(e)}")
         print(traceback.format_exc())
-        return jsonify({'error': error_msg}), 500
 
 
 def get_pr_diff(owner, repo_name, pr_number, token):
